@@ -261,30 +261,20 @@ def RoadNetwortLable_by_each_road(year,district):
     print(len(osm_road))
     print(osm_road)
 #######将县和年份对应的路网提取
-    geojson_data = gpd.read_file('../geojson/'+str(district)+'.geojson')
     img_name_list_all_GT = []
-    if not os.path.exists('../temp_output/'+district+'_width3_'+str(year)+'/'):
-        os.makedirs('../temp_output/'+district+'_width3_'+str(year)+'/')
-    # '../temp_output/'+district+'_width3_'+str(year)+'/'+district+ '_' + str(year) + '_OSM_road_label_'+str(road_name)+'_'+img_name+'.png'
-    already_list_GT_full_name = glob.glob('../temp_output/'+district+'_width3_'+str(year)+'/*.png')
-    if len(already_list_GT_full_name) == 0:
-        already_list_GT = []
-    else:
-        already_list_GT = [str(x.split('/')[-1].split('_')[5]) for x in already_list_GT_full_name]
     for road_idx in range(len(osm_road)): ###################original geojson
         geo1 = osm_road.at[road_idx,'link_coors']  #每一条路先制成一个label， geometry为一个lon,lat list
         #####geo1 此时为一个字符串list 类似于 116.396574,34.639533;116.396547,34.639399;116.396676,34.638675;116.396703,34.638433
         road_name = osm_road.at[road_idx,'id'] ##希望每条路可以有一个标号,类似于一个unique id,如果没有,我再修改一下.. 
         # if road_name!=225534870:
         #     continue
-        if str(road_name) in already_list_GT:
-            continue
         print(district,road_name)
         
         # geo1= list(geo1.geoms)
         # point_list = []
         p1_list = []
         p2_list = []
+        geojson_data = gpd.read_file('../geojson/'+str(district)+'.geojson')
         for g in list(geo1.split(';')):
             lng_gcj = float(g.split(',')[0])
             lat_gcj = float(g.split(',')[1])
@@ -365,11 +355,11 @@ def RoadNetwortLable_by_each_road(year,district):
 
         pd_dict_new = pd_dict_new.reset_index(drop = True)
 
-
         for k in range(len(pd_dict_new)-1):
             # print((pd_dict_new.at[k,'row'],pd_dict_new.at[k,'col']), (pd_dict_new.at[k+1,'row'],pd_dict_new.at[k+1,'col']))
             label_array = cv2.line(label_array, (pd_dict_new.at[k,'col'],pd_dict_new.at[k,'row']), (pd_dict_new.at[k+1,'col'], \
                                                                                                     pd_dict_new.at[k+1,'row']), (255, 255, 0), 1) #start_point, end_point, color, thickness
+
 
         #####################OSM label line color image
 
@@ -377,8 +367,6 @@ def RoadNetwortLable_by_each_road(year,district):
             for j in range(mask_width):
                 img_name = str(i+min_y)+'_'+str(j+min_x)
                 img_name_list_all_GT.append(img_name)
-                if os.path.exists('../temp_output/'+district+'_width3_'+str(year)+'/'+district+ '_' + str(year) + '_OSM_road_label_'+str(road_name)+'_'+img_name+'.png'):
-                    continue
 
                 # if img_name not in img_name_list_all_GT:
                 #     continue
@@ -387,6 +375,8 @@ def RoadNetwortLable_by_each_road(year,district):
                     continue
 
                 im = Image.fromarray((label_array[(i)*256:(i+1)*256, (j)*256:(j+1)*256]))
+                if not os.path.exists('../temp_output/'+district+'_width3_'+str(year)+'/'):
+                    os.makedirs('../temp_output/'+district+'_width3_'+str(year)+'/')
                 im.convert('L').save('../temp_output/'+district+'_width3_'+str(year)+'/'+district+ '_' + str(year) + '_OSM_road_label_'+str(road_name)+'_'+img_name+'.png')
 
 
@@ -424,16 +414,12 @@ def RoadNetwortLable_by_each_road(year,district):
     label_img_list = [x.split('.')[-2].split('_')[-2]+'_'+x.split('.')[-2].split('_')[-1] for x in label_list]
 
     print(label_img_list[:5])
-    if not os.path.exists('../temp_output/'+district+'_road_label_by_image_'+str(year)+'/'):
-        os.makedirs('../temp_output/'+district+'_road_label_by_image_'+str(year)+'/')
 
     for k in range(len(pd_dict)):
         # y_tile = pd_dict.at[k,'y_tile']
         # x_tile = pd_dict.at[k,'x_tile']
         # img_name = str(y_tile)+'_'+str(x_tile)
         img_name = pd_dict.at[k,'img_name']
-        if os.path.exists('../temp_output/'+district+'_road_label_by_image_'+str(year)+'/'+img_name+'.png'):
-            continue
         # print(img_name)
         # img_name = '26174_54068'
 
@@ -456,5 +442,7 @@ def RoadNetwortLable_by_each_road(year,district):
             label_img = np.array(Image.open(label_list[b[0]]))
             label_img[label_img>0] = 255
 
-        im = Image.fromarray(label_img) 
+        im = Image.fromarray(label_img)            
+        if not os.path.exists('../temp_output/'+district+'_road_label_by_image_'+str(year)+'/'):
+            os.makedirs('../temp_output/'+district+'_road_label_by_image_'+str(year)+'/')
         im.convert('L').save('../temp_output/'+district+'_road_label_by_image_'+str(year)+'/'+img_name+'.png')  #xiaoxian
